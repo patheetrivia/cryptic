@@ -675,7 +675,7 @@ function PuzzleIndex() {
 
       <ul className="space-y-3">
         {items.map((it) => {
-          const playUrl = `$?p=${encodeURIComponent(`${base}/puzzles/${it.file}`)}`;
+          const playUrl = `$?p=${encodeURIComponent(`puzzles/${it.file}`)}`;
           console.log(playUrl)
           return (
             <li key={it.slug} className="bg-white rounded-2xl shadow p-4 flex items-center justify-between">
