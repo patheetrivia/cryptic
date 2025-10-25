@@ -663,16 +663,14 @@ function PuzzleIndex() {
   const [items, setItems] = React.useState([]);
   const [err, setErr] = React.useState(null);
 
-  // Always build URLs from the Vite base
-  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  const url = `${window.location.origin}${import.meta.env.BASE_URL}puzzles/index.json`;
+  const JSON_URL = `${import.meta.env.BASE_URL}puzzles/index.json`;  // dev: /cryptic.github.io/..., prod: same
 
   React.useEffect(() => {
-    fetch(url)
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`); return r.json(); })
+    fetch(JSON_URL, { cache: 'no-store' })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${JSON_URL}`); return r.json(); })
       .then(setItems)
       .catch(e => setErr(String(e)));
-  }, [url]);
+  }, [JSON_URL]);
 
   return (
     <div className="max-w-4xl mx-auto p-6">
