@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "deploy": "npm run build && cp dist/index.html dist/404.html && git push origin `git subtree split --prefix dist HEAD`:gh-pages --force",
+    "deploy": "npm run build && git add dist -f && git commit -m 'build' || true && git subtree push --prefix dist origin gh-pages",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
