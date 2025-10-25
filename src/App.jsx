@@ -663,14 +663,17 @@ function PuzzleIndex() {
   const [items, setItems] = React.useState([]);
   const [err, setErr] = React.useState(null);
 
-  const JSON_URL = `${import.meta.env.BASE_URL}puzzles/index.json`;  // dev: /cryptic.github.io/..., prod: same
+  const url = `${import.meta.env.BASE_URL}puzzles/index.json`;
 
   React.useEffect(() => {
-    fetch(JSON_URL, { cache: 'no-store' })
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${JSON_URL}`); return r.json(); })
+    fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
+        return r.json();
+      })
       .then(setItems)
-      .catch(e => setErr(String(e)));
-  }, [JSON_URL]);
+      .catch((e) => setErr(String(e)));
+  }, [url]);
 
   return (
     <div className="max-w-4xl mx-auto p-6">
