@@ -442,6 +442,7 @@ function runAt(i, dir) {
 }
 
 export default function AppRouter() {
+    console.log("approuter");
   // If URL has ?p=... treat it as a PUZ path (e.g., /puzzles/example.puz)
   const [puzzle, setPuzzle] = React.useState(null);
   const [error, setError] = React.useState(null);
@@ -472,6 +473,7 @@ export default function AppRouter() {
   }
 
   // Index mode: list puzzles from /puzzles/index.json
+  console.log("hello index")
   return <PuzzleIndex />;
 }
 
@@ -664,15 +666,17 @@ function puzToPuzzle(arrayBuffer) {
 function PuzzleIndex() {
   const [items] = React.useState(BUNDLED_INDEX);  // ✅ never 404s
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  console.log(base)
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-2">Cryptic Arrrchives</h1>
-      <p className="text-gray-600 mb-6">Click a puzzle to start solving!</p>
+      <p className="text-gray-600 mb-6">donut Click a puzzle to start solving!</p>
 
       <ul className="space-y-3">
         {items.map((it) => {
-          const playUrl = `${base}/?p=${encodeURIComponent(`${base}/puzzles/${it.file}`)}`;
+          const playUrl = `$?p=${encodeURIComponent(`${base}/puzzles/${it.file}`)}`;
+          console.log(playUrl)
           return (
             <li key={it.slug} className="bg-white rounded-2xl shadow p-4 flex items-center justify-between">
               <div>
