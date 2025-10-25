@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
+import BUNDLED_INDEX from './data/puzzles-index.json';
+
 /**
  * Playable Crossword (single-file React component)
  * -------------------------------------------------
@@ -660,58 +662,17 @@ function puzToPuzzle(arrayBuffer) {
 }
 
 function PuzzleIndex() {
-  const [items, setItems] = React.useState([]);
-  const [err, setErr] = React.useState(null);
-
-  const url = `${import.meta.env.BASE_URL}puzzles/index.json`;
-  console.log('Fetching:', url);
-
-  React.useEffect(() => {
-    fetch(url, { cache: 'no-store' })
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
-        return r.json();
-      })
-      .then(setItems)
-      .catch(e => setErr(String(e)));
-  }, [url]);
-
-  // 2) Try them until one works
-  React.useEffect(() => {
-    (async () => {
-      let lastErr = '';
-      for (const u of CANDIDATES) {
-        try {
-          // quick HEAD to avoid parsing junk
-          const head = await fetch(u, { method: 'HEAD', cache: 'no-store' });
-          if (!head.ok) { lastErr = `HTTP ${head.status} for ${u}`; continue; }
-
-          // real GET once HEAD passed
-          const res = await fetch(u, { cache: 'no-store' });
-          if (!res.ok) { lastErr = `HTTP ${res.status} for ${u}`; continue; }
-
-          const data = await res.json();
-          console.log('[puzzles] using:', u);
-          setItems(data);
-          setErr(null);
-          return;
-        } catch (e) {
-          lastErr = String(e);
-        }
-      }
-      throw new Error(lastErr || 'Could not locate puzzles/index.json');
-    })().catch(e => setErr(e.message || String(e)));
-  }, [CANDIDATES]);
+  const [items] = React.useState(BUNDLED_INDEX);  // ✅ never 404s
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-2">Cryptic Archives</h1>
       <p className="text-gray-600 mb-6">Click a puzzle to start solving!</p>
-      {err && <div className="text-red-600 mb-4">{err}</div>}
+
       <ul className="space-y-3">
         {items.map((it) => {
-          const prefix = import.meta.env.DEV ? '/' : import.meta.env.BASE_URL;
-          const playUrl = `${prefix}?p=${encodeURIComponent(`${prefix}puzzles/${it.file}`)}`;
+          const playUrl = `${base}/?p=${encodeURIComponent(`${base}/puzzles/${it.file}`)}`;
           return (
             <li key={it.slug} className="bg-white rounded-2xl shadow p-4 flex items-center justify-between">
               <div>
