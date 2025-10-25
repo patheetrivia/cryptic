@@ -473,7 +473,6 @@ export default function AppRouter() {
   }
 
   // Index mode: list puzzles from /puzzles/index.json
-  console.log("hello index")
   return <PuzzleIndex />;
 }
 
