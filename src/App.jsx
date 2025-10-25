@@ -529,7 +529,7 @@ function CrosswordShell({ puzzle }) {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href="/" className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">← All puzzles</a>
+          <a href={import.meta.env.BASE_URL} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">← All puzzles</a>
           <button onClick={()=>handlers.checkCurrent(true)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Check word</button>
           <button onClick={()=>handlers.revealCurrent(true)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Reveal word</button>
           <button onClick={()=>handlers.checkCurrent(false)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Check all</button>
@@ -662,15 +662,18 @@ function puzToPuzzle(arrayBuffer) {
 function PuzzleIndex() {
   const [items, setItems] = React.useState([]);
   const [err, setErr] = React.useState(null);
-  const base = import.meta.env?.BASE_URL || '/';
+
+  // Always build URLs from the Vite base
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const url = `${window.location.origin}${import.meta.env.BASE_URL}puzzles/index.json`;
 
   React.useEffect(() => {
-    const url = base.replace(/\/$/, '') + '/puzzles/index.json';
     fetch(url)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`); return r.json(); })
       .then(setItems)
       .catch(e => setErr(String(e)));
-  }, [base]);
+  }, [url]);
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-2">Cryptic Archives</h1>
@@ -678,14 +681,15 @@ function PuzzleIndex() {
       {err && <div className="text-red-600 mb-4">{err}</div>}
       <ul className="space-y-3">
         {items.map((it) => {
-          const pHref = `${base.replace(/\/$/, '')}/?p=${encodeURIComponent(`${base.replace(/\/$/, '')}/puzzles/${it.file}`)}`;
+          // Build a play URL like: /cryptic.github.io/?p=/cryptic.github.io/puzzles/foo.puz
+          const playUrl = `${base}/?p=${encodeURIComponent(`${base}/puzzles/${it.file}`)}`;
           return (
             <li key={it.slug} className="bg-white rounded-2xl shadow p-4 flex items-center justify-between">
               <div>
                 <div className="font-semibold">{it.title}</div>
                 <div className="text-sm text-gray-600">by {it.author} • {it.date}</div>
               </div>
-              <a href={pHref} className="px-3 py-2 rounded-xl bg-gray-900 text-white">Play</a>
+              <a href={playUrl} className="px-3 py-2 rounded-xl bg-gray-900 text-white">Play</a>
             </li>
           );
         })}
