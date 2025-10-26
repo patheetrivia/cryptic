@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import BUNDLED_INDEX from './data/puzzles-index.json';
 
+import { TRICKS } from "./tricks";
+
+
 /**
  * Playable Crossword (single-file React component)
  * -------------------------------------------------
@@ -518,7 +521,7 @@ function CrosswordShell({ puzzle }) {
   const acrossList = React.useMemo(() => buildClueList('across'), [numbering, P]);
   const downList   = React.useMemo(() => buildClueList('down'),   [numbering, P]);
 
-  const [aboutText, setAboutText] = React.useState("");
+  const [tricks, setTricks] = React.useState([]);
 
   React.useEffect(() => {
     fetch("puzzles/index.json")
@@ -531,7 +534,7 @@ function CrosswordShell({ puzzle }) {
             it.title === puzzle.title ||
             it.slug === (puzzle.title || "").toLowerCase().replace(/\s+/g, "")
         );
-        if (match?.about) setAboutText(match.about);
+        setTricks(match?.tricks || []);
       })
       .catch((err) => console.error("Failed to load about text:", err));
   }, [puzzle]);
@@ -556,20 +559,33 @@ function CrosswordShell({ puzzle }) {
         </div>
         <div className="flex flex-wrap gap-2">
           <a href={import.meta.env.BASE_URL} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">← All puzzles</a>
-          <button onClick={() => setShowAbout(!showAbout)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50"> {showAbout ? "Hide About" : "About"}</button>
-          <button onClick={()=>handlers.checkCurrent(true)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Check word</button>
-          <button onClick={()=>handlers.revealCurrent(true)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Reveal word</button>
-          <button onClick={()=>handlers.checkCurrent(false)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Check all</button>
-          <button onClick={()=>handlers.revealCurrent(false)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Reveal all</button>
+          <button onClick={() => setShowAbout(!showAbout)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">About</button>
+          <button onClick={()=>handlers.checkCurrent(true)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Check Word</button>
+          <button onClick={()=>handlers.revealCurrent(true)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Reveal Word</button>
+          <button onClick={()=>handlers.checkCurrent(false)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Check All</button>
+          <button onClick={()=>handlers.revealCurrent(false)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Reveal All</button>
           <button onClick={handlers.clearAll} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Clear</button>
         </div>
       </header>
       {showAbout && (
         <div className="max-w-3xl mx-auto my-4 p-4 bg-white rounded-xl shadow">
-          <h2 className="text-xl font-semibold mb-2">About this puzzle</h2>
-          <p className="text-gray-700 whitespace-pre-wrap">
-             {aboutText || "Loading..."}
-          </p>
+          <h2 className="text-xl font-semibold mb-2">Tricks Used</h2>
+          {tricks.length ? (
+            <ul className="space-y-3">
+              {tricks.map((k) => {
+                const t = TRICKS[k];
+                if (!t) return null;
+                return (
+                  <li key={k} className="p-3 rounded-xl bg-gray-50 border border-gray-200">
+                    <div className="font-medium">{t.label}</div>
+                    <div className="text-sm text-gray-700">{t.blurb}</div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-gray-600">No tricks listed for this puzzle.</p>
+          )}
         </div>
       )}
       <main className="max-w-6xl mx-auto px-4 pb-16 grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8">
