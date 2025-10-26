@@ -494,6 +494,10 @@ function CrosswordShell({ puzzle }) {
   } = useCrossword(puzzle);
 
   const boardRef = useRef(null);
+  const inputRef = useRef(null);
+  const isTouch = typeof window !== "undefined"
+    && window.matchMedia
+    && window.matchMedia("(pointer: coarse)").matches;
   useEffect(() => {
     const onKey = (e) => {
     console.log("KEY:", e.key);
@@ -571,14 +575,38 @@ function CrosswordShell({ puzzle }) {
       <main className="max-w-6xl mx-auto px-4 pb-16 grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8">
         <div className="flex justify-center">
           <div ref={boardRef} tabIndex={0} className="relative outline-none">
-            <Board W={W} H={H} cells={cells} numbering={numbering} focus={focus} getCurrentRun={getCurrentRun} dir={dir} />
+            {/* Hidden input for iPhone keyboard */}
+            {isTouch && (
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="text"
+                autoCapitalize="characters"
+                style={{
+                  position: "absolute",
+                  opacity: 0,
+                  width: 1,
+                  height: 1,
+                  border: "none",
+                }}
+                onBeforeInput={(e) => {
+                  if (e.inputType === "deleteContentBackward")
+                    handlers.handleKey({ key: "Backspace", preventDefault(){} });
+                  else if (e.data)
+                    handlers.handleKey({ key: e.data.toUpperCase(), preventDefault(){} });
+                  e.target.value = "";
+                }}
+              />
+            )}
+
+            <Board W={W} H={H} cells={cells} numbering={numbering} focus={focus}
+              getCurrentRun={getCurrentRun} dir={dir} />
             <GridOverlay
-              W={W}
-              H={H}
-              numbering={numbering}
+              W={W} H={H} numbering={numbering}
               onCellClick={(i) => {
                 handlers.selectCell(i);
-                boardRef.current?.focus(); // ← lets you type immediately
+                boardRef.current?.focus();
+                if (isTouch) inputRef.current?.focus(); // 👈 show native keyboard
               }}
             />
           </div>
