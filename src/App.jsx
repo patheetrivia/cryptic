@@ -616,7 +616,6 @@ function CrosswordShell({ puzzle }) {
           <CluePanel title="Down"   list={downList}   dir="down"   active={dir} currentNum={currentClue?.num} onClick={clickClue} />
         </div>
       </main>
-      <MobileKeys onKey={(k)=>{ const e = new KeyboardEvent('keydown', { key: k }); document.activeElement?.dispatchEvent(e); }} />
       <footer className="max-w-6xl mx-auto px-4 pb-10 text-xs text-gray-500">Crossword component © {new Date().getFullYear()}</footer>
     </div>
   );
@@ -890,27 +889,4 @@ function CluePanel({ title, list, dir, active, currentNum, onClick }) {
   );
 }
 
-function MobileKeys({ onKey }) {
-  // Shown on small screens; also handy for testing
-  const keys = [
-    'Q','W','E','R','T','Y','U','I','O','P',
-    'A','S','D','F','G','H','J','K','L',
-    'Z','X','C','V','B','N','M'
-  ];
-  return (
-    <div className="fixed bottom-0 inset-x-0 md:hidden bg-white/90 backdrop-blur border-t border-gray-200 p-2">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex gap-2 mb-2">
-          <button onClick={()=>onKey(' ')} className="px-3 py-2 rounded-xl bg-gray-100">Dir</button>
-          <button onClick={()=>onKey('Tab')} className="px-3 py-2 rounded-xl bg-gray-100">Next</button>
-          <button onClick={()=>onKey('Backspace')} className="px-3 py-2 rounded-xl bg-gray-100">⌫</button>
-        </div>
-        <div className="grid grid-cols-10 gap-1">
-          {keys.map(k => (
-            <button key={k} onClick={()=>onKey(k)} className="px-2 py-2 rounded-md bg-gray-100 active:bg-gray-200">{k}</button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+
