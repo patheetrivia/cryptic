@@ -478,6 +478,7 @@ export default function AppRouter() {
 
 
 function CrosswordShell({ puzzle }) {
+  const [showAbout, setShowAbout] = React.useState(false);
   const {
     puzzle: P,
     W, H,
@@ -513,6 +514,24 @@ function CrosswordShell({ puzzle }) {
   const acrossList = React.useMemo(() => buildClueList('across'), [numbering, P]);
   const downList   = React.useMemo(() => buildClueList('down'),   [numbering, P]);
 
+  const [aboutText, setAboutText] = React.useState("");
+
+  React.useEffect(() => {
+    fetch("puzzles/index.json")
+      .then((res) => res.json())
+      .then((data) => {
+        // find matching entry by slug or filename
+        const match = data.find(
+          (it) =>
+            it.file === puzzle.sourceFile ||
+            it.title === puzzle.title ||
+            it.slug === (puzzle.title || "").toLowerCase().replace(/\s+/g, "")
+        );
+        if (match?.about) setAboutText(match.about);
+      })
+      .catch((err) => console.error("Failed to load about text:", err));
+  }, [puzzle]);
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="max-w-6xl mx-auto px-4 py-6 flex items-start justify-between gap-4">
@@ -533,6 +552,7 @@ function CrosswordShell({ puzzle }) {
         </div>
         <div className="flex flex-wrap gap-2">
           <a href={import.meta.env.BASE_URL} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">← All puzzles</a>
+          <button onClick={() => setShowAbout(!showAbout)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50"> {showAbout ? "Hide About" : "About"}</button>
           <button onClick={()=>handlers.checkCurrent(true)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Check word</button>
           <button onClick={()=>handlers.revealCurrent(true)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Reveal word</button>
           <button onClick={()=>handlers.checkCurrent(false)} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Check all</button>
@@ -540,7 +560,14 @@ function CrosswordShell({ puzzle }) {
           <button onClick={handlers.clearAll} className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-50">Clear</button>
         </div>
       </header>
-
+      {showAbout && (
+        <div className="max-w-3xl mx-auto my-4 p-4 bg-white rounded-xl shadow">
+          <h2 className="text-xl font-semibold mb-2">About this puzzle</h2>
+          <p className="text-gray-700 whitespace-pre-wrap">
+             {aboutText || "Loading..."}
+          </p>
+        </div>
+      )}
       <main className="max-w-6xl mx-auto px-4 pb-16 grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8">
         <div className="flex justify-center">
           <div ref={boardRef} tabIndex={0} className="relative outline-none">
@@ -694,8 +721,36 @@ function PuzzleIndex() {
 function Board({ W, H, cells, numbering, focus, getCurrentRun, dir }) {
   const size = Math.min(520, Math.min(window.innerWidth - 32, 640));
   const cellPx = Math.floor(size / Math.max(W, H));
+  const isTouch = typeof window !== "undefined"
+    && window.matchMedia
+    && window.matchMedia("(pointer: coarse)").matches;
   return (
     <div className="relative" style={{ width: cellPx*W, height: cellPx*H }}>
+      {/* Hidden input for mobile keyboards (touch devices only) */}
+      {isTouch && (
+        <input
+          id="hiddenInput"
+          type="text"
+          inputMode="text"
+          autoCapitalize="characters"
+          style={{
+            position: "absolute",
+            opacity: 0,
+            height: 0,
+            width: 0,
+            border: "none",
+          }}
+          onChange={(e) => {
+            const val = e.target.value.slice(-1).toUpperCase();
+            if (/^[A-Z]$/.test(val)) {
+              const ev = new KeyboardEvent("keydown", { key: val });
+              window.dispatchEvent(ev); // your existing key handler listens on window
+            }
+            e.target.value = "";
+          }}
+        />
+      )}
+
       {/* Base grid */}
       <svg width={cellPx * W} height={cellPx * H} className="rounded-2xl shadow bg-white">
   {Array.from({ length: H }).map((_, r) =>
