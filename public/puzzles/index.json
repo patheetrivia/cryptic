@@ -1,3 +1,4 @@
 [
-  { "slug": "first",  "title": "American Cryptic I",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-10-24", "file": "americ1.puz", "tricks": ["anagram", "charade", "double_definition", "deletion"] }
+  { "slug": "first",  "title": "10/26 Medium",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-10-24", "file": "americ1.puz", "tricks": ["anagram", "charade", "double_definition", "deletion"] },
+  { "slug": "second",  "title": "10/27 Mini",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-10-24", "file": "mini1.puz", "tricks": ["anagram", "charade", "acrostic"] }
 ]
