@@ -1,10 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-import BUNDLED_INDEX from './data/puzzles-index.json';
-
-import { TRICKS } from "./tricks";
-
-
+import { TRICKS } from "./tricks.js"
 /**
  * Playable Crossword (single-file React component)
  * -------------------------------------------------
@@ -462,7 +458,10 @@ export default function AppRouter() {
         return res.arrayBuffer();
       })
       .then(buf => puzToPuzzle(buf))
-      .then(json => setPuzzle(json))
+      .then(json => {
+        json.sourceFile = p;     // keep the exact query param path, e.g. "puzzles/americ1.puz"
+        setPuzzle(json);
+      })
       .catch(e => setError(String(e)))
       .finally(()=>setLoading(false));
   }, []);
@@ -524,20 +523,29 @@ function CrosswordShell({ puzzle }) {
   const [tricks, setTricks] = React.useState([]);
 
   React.useEffect(() => {
-    fetch("puzzles/index.json")
-      .then((res) => res.json())
-      .then((data) => {
-        // find matching entry by slug or filename
-        const match = data.find(
-          (it) =>
-            it.file === puzzle.sourceFile ||
-            it.title === puzzle.title ||
-            it.slug === (puzzle.title || "").toLowerCase().replace(/\s+/g, "")
-        );
-        setTricks(match?.tricks || []);
-      })
-      .catch((err) => console.error("Failed to load about text:", err));
-  }, [puzzle]);
+   (async () => {
+     try {
+       const base = new URL(import.meta.env.BASE_URL, window.location.origin);
+       const url  = new URL("puzzles/index.json", base);
+       const res  = await fetch(url);
+       const data = await res.json();
+
+       // derive basename from the current ?p=...
+       const params   = new URLSearchParams(window.location.search);
+       const pParam   = params.get("p") || puzzle?.sourceFile || "";
+       const basename = pParam.split("/").pop(); // e.g., "americ1.puz"
+
+       const slugFromTitle = (t) => (t || "").toLowerCase().replace(/\s+/g, "");
+       const match = data.find((it) =>
+         it.file === basename ||
+         it.title === puzzle?.title ||
+         it.slug === slugFromTitle(puzzle?.title)
+       );    setTricks(match?.tricks ?? []);
+     } catch (err) {
+       console.error("Failed to load tricks:", err);
+     }
+   })();
+ }, [puzzle]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -733,9 +741,26 @@ function puzToPuzzle(arrayBuffer) {
 }
 
 function PuzzleIndex() {
-  const [items] = React.useState(BUNDLED_INDEX);  // ✅ never 404s
-  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  console.log(base)
+  const [items, setItems] = React.useState([]);      // ✅ state + setter
+  const [error, setError] = React.useState(null);    // optional: show errors
+
+  React.useEffect(() => {
+  (async () => {
+    try {
+      const base = new URL(import.meta.env.BASE_URL, window.location.origin); // ✅ absolute
+      const url  = new URL('puzzles/index.json', base);
+      const res  = await fetch(url, { cache: 'no-store' });
+      const data = await res.json();
+      setItems(data);
+    } catch (e) {
+      console.error(e);
+      setError(String(e));
+    }
+  })();
+}, []);
+
+  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
+  if (!items.length) return <div className="p-6">Loading…</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -744,8 +769,8 @@ function PuzzleIndex() {
 
       <ul className="space-y-3">
         {items.map((it) => {
+          // If your JSON file has "file": "americ1.puz", keep this as-is:
           const playUrl = `?p=${encodeURIComponent(`puzzles/${it.file}`)}`;
-          console.log(playUrl)
           return (
             <li key={it.slug} className="bg-white rounded-2xl shadow p-4 flex items-center justify-between">
               <div>
