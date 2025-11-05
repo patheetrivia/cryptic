@@ -157,18 +157,70 @@ function useCrossword(puzzleProp) {
   }
 }, [focus, flatGrid]);
 
+  const DIR = { NONE: 0, A: 1, D: 2, AD: 3 };
+const openRC = (r, c) =>
+  r >= 0 && r < H && c >= 0 && c < W && flatGrid[r * W + c] !== "#";
+
+const dirMask = useMemo(() => {
+  const m = Array.from({ length: H }, () => Array(W).fill(DIR.NONE));
+  for (let r = 0; r < H; r++) {
+    for (let c = 0; c < W; c++) {
+      if (!openRC(r, c)) continue;
+      const hasA = openRC(r, c - 1) || openRC(r, c + 1); // any horizontal neighbor
+      const hasD = openRC(r - 1, c) || openRC(r + 1, c); // any vertical neighbor
+      m[r][c] = (hasA ? DIR.A : 0) | (hasD ? DIR.D : 0);
+    }
+  }
+  return m;
+}, [W, H, flatGrid]);
+
+useEffect(() => {
+  if (focus == null) return;
+  const locked = coerceDirAt(focus, dir);
+  if (locked !== dir) setDir(locked);
+}, [focus, dir]);
+
+const coerceDirAt = (i, proposed) => {
+  if (i == null) return proposed;
+  const { r, c } = indexToRC(i, W);
+  const mask = dirMask[r][c];
+  if (mask === DIR.A) return "across";
+  if (mask === DIR.D) return "down";
+  return proposed; // both valid; keep proposed
+};
+
+// Safe toggle: only toggles if BOTH directions exist at the focused cell
+function safeToggleDirection() {
+  if (focus == null) return;
+  const { r, c } = indexToRC(focus, W);
+  if (dirMask[r][c] === DIR.AD) {
+    setDir(d => (d === "across" ? "down" : "across"));
+  } else {
+    // lock to the only valid direction
+    setDir(d => coerceDirAt(focus, d));
+  }
+}
+
   // Build clue lists keyed by number -> clue text
   const clueTextA = useMemo(() => new Map(puzzle.clues.across.map(c => [c.num, c.text])), [puzzle]);
   const clueTextD = useMemo(() => new Map(puzzle.clues.down.map(c => [c.num, c.text])), [puzzle]);
 
   const currentClue = useMemo(() => {
   if (focus == null) return null;
-  const start = startIndexOf(focus, dir);
+
+  // Use the locked direction appropriate for the focused cell
+  const effDir = coerceDirAt(focus, dir);
+
+  const start = startIndexOf(focus, effDir);
   if (start == null) return null;
+
   const n = numbering.numbers[start];
   if (!n) return null;
-  const text = (dir === 'across' ? clueTextA : clueTextD).get(n) || '';
-  return { num: n, dir, text };
+
+  const text = (effDir === 'across' ? clueTextA : clueTextD).get(n);
+  if (!text) return null; // don't show "1A (empty)"
+
+  return { num: n, dir: effDir, text };
 }, [focus, dir, numbering, clueTextA, clueTextD]);
 
 function startIndexOf(i, dir) {
@@ -279,17 +331,20 @@ function runAt(i, dir) {
 
     // Arrow keys
     if (key.startsWith("Arrow")) {
-      setDir(key === "ArrowUp" || key === "ArrowDown" ? "down" : "across");
       const moveMap = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -W, ArrowDown: W };
       const delta = moveMap[key] || 0;
       const target = prevFocus + delta;
       if (target < 0 || target >= W * H || flatGrid[target] === "#") return prevFocus;
+
+      const proposed = (key === "ArrowUp" || key === "ArrowDown") ? "down" : "across";
+      const locked = coerceDirAt(target, proposed);
+      setDir(locked);
       return target;
     }
 
     // Toggle direction
     if (key === " ") {
-      toggleDirection();
+      safeToggleDirection();
       return prevFocus;
     }
 
@@ -355,17 +410,19 @@ function runAt(i, dir) {
   }
 
   function selectCell(i) {
-  if (flatGrid[i] === '#') return;
+  if (flatGrid[i] === "#") return;
 
-  // clicking the same cell toggles direction (keeps your old behavior)
-  if (i === focus) { toggleDirection(); return; }
+  // If clicking the same cell: toggle ONLY if both directions exist here
+  if (i === focus) {
+    safeToggleDirection();
+    return;
+  }
 
-  // Prefer the Across clue when both exist, otherwise pick Down if only Down exists
-  const a = runAt(i, 'across');
-  const d = runAt(i, 'down');
-  const newDir = a.length ? 'across' : (d.length ? 'down' : dir);
+  // Otherwise, lock to the only valid direction at that cell (or keep proposed)
+  const desired = dir; // keep current preference if both are valid
+  const locked = coerceDirAt(i, desired);
 
-  setDir(newDir);
+  setDir(locked);
   setFocus(i);
 }
 
@@ -458,10 +515,28 @@ export default function AppRouter() {
         return res.arrayBuffer();
       })
       .then(buf => puzToPuzzle(buf))
-      .then(json => {
-        json.sourceFile = p;     // keep the exact query param path, e.g. "puzzles/americ1.puz"
-        setPuzzle(json);
-      })
+      .then(async (json) => {
+  json.sourceFile = p;
+
+  // ✅ Look up this puzzle's entry in index.json to override title
+  try {
+    const base = new URL(import.meta.env.BASE_URL, window.location.origin);
+    const url  = new URL("puzzles/index.json", base);
+    const res  = await fetch(url);
+    const list = await res.json();
+    const basename = p.split("/").pop();
+    const match = list.find(it => it.file === basename);
+    if (match) {
+      json.title  = match.title  || json.title;
+      json.author = match.author || json.author;
+      json.date   = match.date   || json.date;
+    }
+  } catch (err) {
+    console.warn("Could not sync title from index.json:", err);
+  }
+
+  setPuzzle(json);
+})
       .catch(e => setError(String(e)))
       .finally(()=>setLoading(false));
   }, []);
@@ -580,11 +655,11 @@ function CrosswordShell({ puzzle }) {
           <h2 className="text-xl font-semibold mb-2">Tricks Used</h2>
           {tricks.length ? (
             <ul className="space-y-3">
-              {tricks.map((k) => {
+              {tricks.map((k, i) => {
                 const t = TRICKS[k];
                 if (!t) return null;
                 return (
-                  <li key={k} className="p-3 rounded-xl bg-gray-50 border border-gray-200">
+                  <li key={k + i} className="p-3 rounded-xl bg-gray-50 border border-gray-200">
                     <div className="font-medium">{t.label}</div>
                     <div className="text-sm text-gray-700">{t.blurb}</div>
                   </li>
@@ -751,6 +826,7 @@ function PuzzleIndex() {
       const url  = new URL('puzzles/index.json', base);
       const res  = await fetch(url, { cache: 'no-store' });
       const data = await res.json();
+      data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setItems(data);
     } catch (e) {
       console.error(e);

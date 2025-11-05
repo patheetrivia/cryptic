@@ -1,5 +1,6 @@
 [
-  { "slug": "first",  "title": "10/26 Medium",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-10-24", "file": "americ1.puz", "tricks": ["anagram", "charade", "double_definition", "deletion"] },
-  { "slug": "second",  "title": "10/27 Mini",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-10-27", "file": "mini1.puz", "tricks": ["anagram", "charade", "acrostic"] },
-  { "slug": "second",  "title": "Merry Mix-Up",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-10-27", "file": "merry.puz", "tricks": ["mystery"] }
+  { "slug": "10/26",  "title": "10/26 Medium",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-10-24", "file": "americ1.puz", "tricks": ["anagram", "charade", "double_definition", "deletion"] },
+  { "slug": "10/27",  "title": "10/27 Mini",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-10-27", "file": "mini1.puz", "tricks": ["anagram", "charade", "acrostic"] },
+  { "slug": "10/28",  "title": "10/28 Mini: Merry Mix-Up",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-10-27", "file": "merry.puz", "tricks": ["mystery"] },
+  { "slug": "11/5",  "title": "11/5 Mini",  "author": "Nathaniel W. Sandalow-Ash", "date": "2025-11-5", "file": "mini2.puz", "tricks": ["hidden_answer", "container", "double_definition"] }
 ]
