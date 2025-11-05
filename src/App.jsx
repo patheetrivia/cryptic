@@ -522,7 +522,7 @@ export default function AppRouter() {
   try {
     const base = new URL(import.meta.env.BASE_URL, window.location.origin);
     const url  = new URL("puzzles/index.json", base);
-    const res  = await fetch(url);
+    const res  = await fetch(`${url}?t=${Date.now()}`);
     const list = await res.json();
     const basename = p.split("/").pop();
     const match = list.find(it => it.file === basename);
@@ -602,7 +602,7 @@ function CrosswordShell({ puzzle }) {
      try {
        const base = new URL(import.meta.env.BASE_URL, window.location.origin);
        const url  = new URL("puzzles/index.json", base);
-       const res  = await fetch(url);
+       const res  = await fetch(`${url}?t=${Date.now()}`);
        const data = await res.json();
 
        // derive basename from the current ?p=...
